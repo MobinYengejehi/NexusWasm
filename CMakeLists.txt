@@ -48,6 +48,9 @@ list(
 )
 
 include(NexusWasmWarnings)
+include(NexusWasmWasmtime)
+
+nexuswasm_configure_wasmtime()
 
 # ------------------------------------------------------------
 # Library
@@ -63,6 +66,62 @@ add_library(
     ALIAS
     NexusWasm
 )
+
+add_library(
+    nexuswasm_wasmtime_objects
+    OBJECT
+
+    src/wasmtime/WasmtimeProbe.cpp
+)
+
+target_include_directories(
+    nexuswasm_wasmtime_objects
+    PRIVATE
+
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+
+target_compile_features(
+    nexuswasm_wasmtime_objects
+    PRIVATE
+
+    cxx_std_17
+)
+
+target_link_libraries(
+    nexuswasm_wasmtime_objects
+    PRIVATE
+
+    NexusWasm::Wasmtime
+)
+
+set_target_properties(
+    nexuswasm_wasmtime_objects
+    PROPERTIES
+
+    CXX_EXTENSIONS OFF
+    POSITION_INDEPENDENT_CODE ON
+)
+
+nexuswasm_enable_warnings(
+    nexuswasm_wasmtime_objects
+)
+
+target_sources(
+    NexusWasm
+    PRIVATE
+
+    $<TARGET_OBJECTS:nexuswasm_wasmtime_objects>
+)
+
+if (BUILD_SHARED_LIBS)
+    target_link_libraries(
+        NexusWasm
+        PRIVATE
+
+        NexusWasm::Wasmtime
+    )
+endif()
 
 # ------------------------------------------------------------
 # Generated public export header

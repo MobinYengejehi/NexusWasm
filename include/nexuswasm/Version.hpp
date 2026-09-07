@@ -14,6 +14,16 @@ namespace nexus
         std::uint32_t major;
         std::uint32_t minor;
         std::uint32_t patch;
+
+        constexpr Version(
+            const std::uint32_t majorValue,
+            const std::uint32_t minorValue,
+            const std::uint32_t patchValue
+        ) noexcept :
+            major(majorValue),
+            minor(minorValue),
+            patch(patchValue)
+        {}
     };
 
     [[nodiscard]]

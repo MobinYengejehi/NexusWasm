@@ -2,7 +2,24 @@
   "cmake.useCMakePresets": "always",
   "cmake.configureOnOpen": false,
   "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+
+  "terminal.integrated.profiles.windows": {
+    "NexusWasm MSVC x64": {
+      "path": "C:\\Windows\\System32\\cmd.exe",
+      "args": [
+        "/k",
+        "call",
+        "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\Common7\\Tools\\VsDevCmd.bat",
+        "-arch=x64",
+        "-host_arch=x64"
+      ]
+    }
+  },
+  "terminal.integrated.defaultProfile.windows": "NexusWasm MSVC x64",
+
   "cSpell.words": [
-      "NEXUSWASM"
+    "NEXUSWASM",
+    "PROPE",
+    "WASMTIME"
   ]
 }
