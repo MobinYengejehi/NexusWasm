@@ -1,7 +1,8 @@
 {
   "cmake.useCMakePresets": "always",
-"cmake.configureOnOpen": false,
-"cSpell.words": [
-    "NEXUSWASM"
-]
+  "cmake.configureOnOpen": false,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "cSpell.words": [
+      "NEXUSWASM"
+  ]
 }
