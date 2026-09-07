@@ -1,0 +1,66 @@
+{
+  "version": "2.0.0",
+
+  "tasks": [
+    {
+      "label": "NexusWasm: Debug",
+      "type": "shell",
+      "command": "cmake --preset debug && cmake --build --preset debug && ctest --preset debug",
+      "problemMatcher": [
+        "$msCompile"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+
+    {
+      "label": "NexusWasm: Build Debug",
+      "type": "shell",
+      "command": "cmake --build --preset debug",
+      "problemMatcher": [
+        "$msCompile"
+      ]
+    },
+
+    {
+      "label": "NexusWasm: Test Debug",
+      "type": "shell",
+      "command": "ctest --preset debug",
+      "problemMatcher": []
+    },
+
+    {
+      "label": "NexusWasm: Release",
+      "type": "shell",
+      "command": "cmake --preset release && cmake --build --preset release && ctest --preset release",
+      "problemMatcher": [
+        "$msCompile"
+      ]
+    },
+
+    {
+      "label": "NexusWasm: Debug Shared",
+      "type": "shell",
+      "command": "cmake --preset debug-shared && cmake --build --preset debug-shared && ctest --preset debug-shared",
+      "problemMatcher": [
+        "$msCompile"
+      ]
+    },
+
+    {
+      "label": "NexusWasm: Install",
+      "type": "shell",
+      "command": "cmake --install out/build/release",
+      "problemMatcher": []
+    },
+
+    {
+      "label": "NexusWasm: Clean",
+      "type": "shell",
+      "command": "cmake -E remove_directory out",
+      "problemMatcher": []
+    }
+  ]
+}

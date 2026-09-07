@@ -67,3 +67,23 @@ vcpkg_installed/
 # test output & cache
 Testing/
 .cache/
+
+# CMake
+/out/
+/build/
+/install/
+cmake-build-*/
+
+# Local CMake presets
+CMakeUserPresets.json
+
+# Visual Studio
+.vs/
+*.user
+
+# CLion
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
