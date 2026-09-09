@@ -7,9 +7,17 @@ project(
     LANGUAGES CXX
 )
 
+# ------------------------------------------------------------
+# CMake modules
+# ------------------------------------------------------------
+
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 include(GenerateExportHeader)
+
+# ------------------------------------------------------------
+# Options
+# ------------------------------------------------------------
 
 option(
     BUILD_SHARED_LIBS
@@ -41,6 +49,10 @@ option(
     OFF
 )
 
+# ------------------------------------------------------------
+# Project CMake modules
+# ------------------------------------------------------------
+
 list(
     APPEND
     CMAKE_MODULE_PATH
@@ -50,15 +62,23 @@ list(
 include(NexusWasmWarnings)
 include(NexusWasmWasmtime)
 
+# ------------------------------------------------------------
+# Dependencies
+# ------------------------------------------------------------
+
 nexuswasm_configure_wasmtime()
 
 # ------------------------------------------------------------
-# Library
+# NexusWasm library
 # ------------------------------------------------------------
 
 add_library(
     NexusWasm
+
     src/Version.cpp
+    src/Runtime.cpp
+    src/CompiledModule.cpp
+    src/Instance.cpp
 )
 
 add_library(
@@ -67,61 +87,43 @@ add_library(
     NexusWasm
 )
 
-add_library(
-    nexuswasm_wasmtime_objects
-    OBJECT
+# ------------------------------------------------------------
+# Private implementation dependencies
+# ------------------------------------------------------------
 
-    src/wasmtime/WasmtimeProbe.cpp
+#
+# Wasmtime is an implementation detail of NexusWasm.
+#
+# Runtime.cpp / Instance.cpp / WasmtimeState.hpp may include Wasmtime,
+# but no public NexusWasm header may expose Wasmtime types.
+#
+# BUILD_INTERFACE is intentional for this milestone:
+# it keeps the local PREBUILT SDK path out of the installed package.
+#
+# A complete installed-static Wasmtime dependency policy will be added
+# when the provider/package strategy is finalized.
+#
+
+target_link_libraries(
+    NexusWasm
+
+    PRIVATE
+
+    $<BUILD_INTERFACE:NexusWasm::Wasmtime>
 )
 
+# Allow implementation files to include:
+#
+#   #include "wasmtime/WasmtimeState.hpp"
+#
+
 target_include_directories(
-    nexuswasm_wasmtime_objects
+    NexusWasm
+
     PRIVATE
 
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
-
-target_compile_features(
-    nexuswasm_wasmtime_objects
-    PRIVATE
-
-    cxx_std_17
-)
-
-target_link_libraries(
-    nexuswasm_wasmtime_objects
-    PRIVATE
-
-    NexusWasm::Wasmtime
-)
-
-set_target_properties(
-    nexuswasm_wasmtime_objects
-    PROPERTIES
-
-    CXX_EXTENSIONS OFF
-    POSITION_INDEPENDENT_CODE ON
-)
-
-nexuswasm_enable_warnings(
-    nexuswasm_wasmtime_objects
-)
-
-target_sources(
-    NexusWasm
-    PRIVATE
-
-    $<TARGET_OBJECTS:nexuswasm_wasmtime_objects>
-)
-
-if (BUILD_SHARED_LIBS)
-    target_link_libraries(
-        NexusWasm
-        PRIVATE
-
-        NexusWasm::Wasmtime
-    )
-endif()
 
 # ------------------------------------------------------------
 # Generated public export header
@@ -173,9 +175,19 @@ target_sources(
         "${NEXUSWASM_GENERATED_INCLUDE_DIR}"
 
     FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Error.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Result.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Runtime.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/CompiledModule.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Instance.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Version.hpp"
+
         "${NEXUSWASM_GENERATED_INCLUDE_DIR}/nexuswasm/Export.hpp"
 )
+
+# ------------------------------------------------------------
+# Include directories
+# ------------------------------------------------------------
 
 target_include_directories(
     NexusWasm
@@ -187,15 +199,25 @@ target_include_directories(
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-# Public requirement: NexusWasm requires at least C++17.
+# ------------------------------------------------------------
+# C++ requirements
+# ------------------------------------------------------------
+
 target_compile_features(
     NexusWasm
+
     PUBLIC
+
     cxx_std_17
 )
 
+# ------------------------------------------------------------
+# Target properties
+# ------------------------------------------------------------
+
 set_target_properties(
     NexusWasm
+
     PROPERTIES
 
     CXX_EXTENSIONS OFF
@@ -203,22 +225,36 @@ set_target_properties(
     CXX_VISIBILITY_PRESET hidden
     VISIBILITY_INLINES_HIDDEN YES
 
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib"
+    RUNTIME_OUTPUT_DIRECTORY
+        "${CMAKE_BINARY_DIR}/bin"
+
+    LIBRARY_OUTPUT_DIRECTORY
+        "${CMAKE_BINARY_DIR}/lib"
+
+    ARCHIVE_OUTPUT_DIRECTORY
+        "${CMAKE_BINARY_DIR}/lib"
 )
 
-# GenerateExportHeader needs consumers of a static library
-# to see this definition too.
+# ------------------------------------------------------------
+# Static library export handling
+# ------------------------------------------------------------
+
 if(NOT BUILD_SHARED_LIBS)
+
     target_compile_definitions(
         NexusWasm
+
         PUBLIC
+
         NEXUSWASM_STATIC_DEFINE
     )
+
 endif()
 
-# Keep project version data private to implementation.
+# ------------------------------------------------------------
+# NexusWasm version information
+# ------------------------------------------------------------
+
 target_compile_definitions(
     NexusWasm
 
@@ -231,23 +267,50 @@ target_compile_definitions(
     NEXUSWASM_VERSION_STRING="${PROJECT_VERSION}"
 )
 
-nexuswasm_enable_warnings(NexusWasm)
+# ------------------------------------------------------------
+# Compiler warnings
+# ------------------------------------------------------------
+
+nexuswasm_enable_warnings(
+    NexusWasm
+)
 
 # ------------------------------------------------------------
-# Tests / Examples / Benchmarks
+# Tests
 # ------------------------------------------------------------
 
 if(NEXUSWASM_BUILD_TESTS)
+
     enable_testing()
-    add_subdirectory(tests)
+
+    add_subdirectory(
+        tests
+    )
+
 endif()
+
+# ------------------------------------------------------------
+# Examples
+# ------------------------------------------------------------
 
 if(NEXUSWASM_BUILD_EXAMPLES)
-    add_subdirectory(examples)
+
+    add_subdirectory(
+        examples
+    )
+
 endif()
 
+# ------------------------------------------------------------
+# Benchmarks
+# ------------------------------------------------------------
+
 if(NEXUSWASM_BUILD_BENCHMARKS)
-    add_subdirectory(benchmarks)
+
+    add_subdirectory(
+        benchmarks
+    )
+
 endif()
 
 # ------------------------------------------------------------
@@ -277,6 +340,10 @@ install(
         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
 )
 
+# ------------------------------------------------------------
+# Exported CMake targets
+# ------------------------------------------------------------
+
 install(
     EXPORT NexusWasmTargets
 
@@ -303,12 +370,25 @@ configure_package_config_file(
         "${NEXUSWASM_INSTALL_CMAKEDIR}"
 )
 
-# NexusWasm is still 0.x.
-# Treat 0.<minor>.x as one compatibility line.
+# NexusWasm 0.x:
+#
+# 0.1.x is considered one compatibility line.
+# 0.2.x may contain breaking API changes.
+
 if(PROJECT_VERSION_MAJOR EQUAL 0)
-    set(NEXUSWASM_VERSION_COMPATIBILITY SameMinorVersion)
+
+    set(
+        NEXUSWASM_VERSION_COMPATIBILITY
+        SameMinorVersion
+    )
+
 else()
-    set(NEXUSWASM_VERSION_COMPATIBILITY SameMajorVersion)
+
+    set(
+        NEXUSWASM_VERSION_COMPATIBILITY
+        SameMajorVersion
+    )
+
 endif()
 
 write_basic_package_version_file(
