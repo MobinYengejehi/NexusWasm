@@ -42,9 +42,21 @@ namespace nexus::detail
         }
     };
 
+    struct LinkerDeleter final
+    {
+        void operator()(wasmtime_linker_t* linker) const noexcept
+        {
+            if (linker != nullptr)
+            {
+                wasmtime_linker_delete(linker);
+            }
+        }
+    };
+
     using EnginePtr = std::unique_ptr<wasm_engine_t, EngineDeleter>;
     using ModulePtr = std::unique_ptr<wasmtime_module_t, ModuleDeleter>;
     using StorePtr = std::unique_ptr<wasmtime_store_t, StoreDeleter>;
+    using LinkerPtr = std::unique_ptr<wasmtime_linker_t, LinkerDeleter>;
 
     struct EngineState final
     {
@@ -52,6 +64,15 @@ namespace nexus::detail
 
         explicit EngineState(wasm_engine_t* rawEngine):
             engine{ rawEngine }
+        {}
+    };
+
+    struct RealmState final
+    {
+        std::shared_ptr<EngineState> engine;
+
+        explicit RealmState(std::shared_ptr<EngineState> engineState):
+            engine{ std::move(engineState) }
         {}
     };
 
@@ -70,20 +91,35 @@ namespace nexus::detail
         {}
     };
 
-    struct InstanceState final
+    struct ExecutionDomainState final
     {
         std::shared_ptr<EngineState> engine;
 
-        StorePtr            store;
-        wasmtime_instance_t instance{};
+        StorePtr  store;
+        LinkerPtr linker;
 
-        InstanceState(
+        ExecutionDomainState(
             std::shared_ptr<EngineState> engineState,
             wasmtime_store_t*            rawStore,
-            const wasmtime_instance_t    rawInstance
+            wasmtime_linker_t*           rawLinker
         ):
             engine{ std::move(engineState) },
             store{ rawStore },
+            linker{ rawLinker }
+        {}
+    };
+
+    struct InstanceState final
+    {
+        std::weak_ptr<ExecutionDomainState> domain;
+
+        wasmtime_instance_t instance{};
+
+        InstanceState(
+            const std::shared_ptr<ExecutionDomainState>& domainState,
+            const wasmtime_instance_t                    rawInstance
+        ):
+            domain{ domainState },
             instance{ rawInstance }
         {}
     };

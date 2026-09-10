@@ -7,58 +7,10 @@
 #include <wasmtime.h>
 
 #include "wasmtime/WasmtimeState.hpp"
+#include "wasmtime/WasmtimeError.hpp"
 
 namespace nexus
 {
-    namespace
-    {
-        std::string TakeWasmtimeError(wasmtime_error_t* error)
-        {
-            if (error == nullptr)
-            {
-                return {};
-            }
-
-            wasm_name_t message;
-            wasmtime_error_message(error, &message);
-
-            std::string result{ message.data, message.size };
-
-            wasm_byte_vec_delete(&message);
-            wasmtime_error_delete(error);
-
-            if (!result.empty() && result.back() == '\0')
-            {
-                result.pop_back();
-            }
-
-            return result;
-        }
-
-        std::string TakeTrap(wasm_trap_t* trap)
-        {
-            if (trap == nullptr)
-            {
-                return {};
-            }
-
-            wasm_message_t message{};
-            wasm_trap_message(trap, &message);
-
-            std::string result{ message.data, message.size };
-
-            wasm_byte_vec_delete(&message);
-            wasm_trap_delete(trap);
-
-            if (!result.empty() && result.back() == '\0')
-            {
-                result.pop_back();
-            }
-
-            return result;
-        }
-    }
-
     Runtime::Runtime(std::shared_ptr<detail::EngineState> state) noexcept:
         m_pState{ std::move(state) }
     {}
@@ -84,7 +36,22 @@ namespace nexus
         return Runtime{ std::move(state) };
     }
 
-    Result<CompiledModule> Runtime::Compile(const std::uint8_t* data, const std::size_t size) const
+    Result<Realm> Runtime::CreateRealm() const
+    {
+        if (!m_pState)
+        {
+            return Error{
+                ErrorCode::InvalidState,
+                "Runtime is in a moved-from state."
+            };
+        }
+
+        auto realmState = std::make_shared<detail::RealmState>(m_pState);
+
+        return Realm{ std::move(realmState) };
+    }
+
+    Result<Module> Runtime::Compile(const std::uint8_t* data, const std::size_t size) const
     {
         if (!m_pState)
         {
@@ -109,7 +76,7 @@ namespace nexus
         {
             return Error{
                 ErrorCode::CompilationFailed,
-                TakeWasmtimeError(error)
+                detail::TakeWasmtimeError(error)
             };
         }
         if (rawModule == nullptr)
@@ -122,81 +89,11 @@ namespace nexus
 
         auto moduleState = std::make_shared<detail::ModuleState>(m_pState, rawModule);
 
-        return CompiledModule{ std::move(moduleState) };
+        return Module{ std::move(moduleState) };
     }
 
-    Result<CompiledModule> Runtime::Compile(const std::vector<std::uint8_t>& bytes) const
+    Result<Module> Runtime::Compile(const std::vector<std::uint8_t>& bytes) const
     {
         return Compile(bytes.data(), bytes.size());
-    }
-
-    Result<Instance> Runtime::Instantiate(const CompiledModule& module) const
-    {
-        if (!m_pState)
-        {
-            return Error{
-                ErrorCode::InvalidState,
-                "Runtime is in a moved-from state."
-            };
-        }
-
-        if (!module.m_pState)
-        {
-            return Error{
-                ErrorCode::InvalidState,
-                "CompiledModule is in a moved-from state."
-            };
-        }
-
-        if (module.m_pState->engine.get() != m_pState.get())
-        {
-            return Error{
-                ErrorCode::RuntimeMismatch,
-                "CompiledModule belongs to another Runtime."
-            };
-        }
-
-        wasmtime_store_t* rawStore = wasmtime_store_new(m_pState->engine.get(), nullptr, nullptr);
-        if (rawStore == nullptr)
-        {
-            return Error{
-                ErrorCode::InstantiationFailed,
-                "Failed to create Wasmtime store"
-            };
-        }
-
-        detail::StorePtr store{ rawStore };
-
-        wasmtime_context_t* context = wasmtime_store_context(store.get());
-
-        wasmtime_instance_t instance{};
-        wasm_trap_t*        trap = nullptr;
-        wasmtime_error_t*   error = wasmtime_instance_new(
-            context,
-            module.m_pState->module.get(),
-            nullptr,
-            0,
-            &instance,
-            &trap
-        );
-
-        if (error != nullptr)
-        {
-            return Error{
-                ErrorCode::InstantiationFailed,
-                TakeWasmtimeError(error)
-            };
-        }
-        if (trap != nullptr)
-        {
-            return Error{
-                ErrorCode::Trap,
-                TakeTrap(trap)
-            };
-        }
-
-        auto instanceState = std::make_unique<detail::InstanceState>(m_pState, store.release(), instance);
-
-        return Instance{ std::move(instanceState) };
     }
 }

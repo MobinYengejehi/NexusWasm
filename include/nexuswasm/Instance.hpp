@@ -125,7 +125,7 @@ namespace nexus
         }
     }
 
-    class Runtime;
+    class ExecutionDomain;
 
     class NEXUSWASM_API Instance final
     {
@@ -185,7 +185,7 @@ namespace nexus
 
         std::unique_ptr<detail::InstanceState> m_pState;
 
-        friend class Runtime;
+        friend class ExecutionDomain;
     };
 }
 

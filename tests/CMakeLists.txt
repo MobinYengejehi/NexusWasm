@@ -60,17 +60,17 @@ add_test(
 )
 
 # ------------------------------------------------------------
-# Core public API tests
+# Runtime architecture tests
 # ------------------------------------------------------------
 
 add_executable(
-    nexuswasm_core_api_tests
+    nexuswasm_runtime_architecture_tests
 
-    CoreApiTests.cpp
+    RuntimeArchitectureTests.cpp
 )
 
 target_link_libraries(
-    nexuswasm_core_api_tests
+    nexuswasm_runtime_architecture_tests
 
     PRIVATE
 
@@ -78,7 +78,7 @@ target_link_libraries(
 )
 
 target_compile_features(
-    nexuswasm_core_api_tests
+    nexuswasm_runtime_architecture_tests
 
     PRIVATE
 
@@ -86,7 +86,7 @@ target_compile_features(
 )
 
 set_target_properties(
-    nexuswasm_core_api_tests
+    nexuswasm_runtime_architecture_tests
 
     PROPERTIES
 
@@ -97,13 +97,13 @@ set_target_properties(
 )
 
 nexuswasm_enable_warnings(
-    nexuswasm_core_api_tests
+    nexuswasm_runtime_architecture_tests
 )
 
 add_test(
     NAME
-        nexuswasm.core_api
+        nexuswasm.runtime_architecture
 
     COMMAND
-        nexuswasm_core_api_tests
+        nexuswasm_runtime_architecture_tests
 )

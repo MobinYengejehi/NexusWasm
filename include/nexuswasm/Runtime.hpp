@@ -8,9 +8,9 @@
 #include <memory>
 #include <vector>
 
-#include <nexuswasm/CompiledModule.hpp>
+#include <nexuswasm/Module.hpp>
 #include <nexuswasm/Export.hpp>
-#include <nexuswasm/Instance.hpp>
+#include <nexuswasm/Realm.hpp>
 #include <nexuswasm/Result.hpp>
 
 namespace nexus
@@ -32,13 +32,13 @@ namespace nexus
         ~Runtime();
 
         [[nodiscard]]
-        Result<CompiledModule> Compile(const std::uint8_t* data, std::size_t size) const;
+        Result<Realm> CreateRealm() const;
 
         [[nodiscard]]
-        Result<CompiledModule> Compile(const std::vector<std::uint8_t>& bytes) const;
+        Result<Module> Compile(const std::uint8_t* data, std::size_t size) const;
 
         [[nodiscard]]
-        Result<Instance> Instantiate(const CompiledModule& module) const;
+        Result<Module> Compile(const std::vector<std::uint8_t>& bytes) const;
 
         [[nodiscard]]
         static Result<Runtime> Create();

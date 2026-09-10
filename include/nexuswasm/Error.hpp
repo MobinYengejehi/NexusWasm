@@ -13,6 +13,7 @@ namespace nexus
         None = 0,
 
         EngineCreationFailed,
+        ExecutionDomainCreationFailed,
 
         CompilationFailed,
         InstantiationFailed,

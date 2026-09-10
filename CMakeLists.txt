@@ -77,8 +77,13 @@ add_library(
 
     src/Version.cpp
     src/Runtime.cpp
-    src/CompiledModule.cpp
+    src/Module.cpp
     src/Instance.cpp
+    src/Realm.cpp
+    src/Program.cpp
+    src/ExecutionDomain.cpp
+
+    src/wasmtime/WasmtimeError.cpp
 )
 
 add_library(
@@ -177,9 +182,14 @@ target_sources(
     FILES
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Error.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Result.hpp"
+
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Runtime.hpp"
-        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/CompiledModule.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Realm.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Program.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/ExecutionDomain.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Module.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Instance.hpp"
+
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Version.hpp"
 
         "${NEXUSWASM_GENERATED_INCLUDE_DIR}/nexuswasm/Export.hpp"
