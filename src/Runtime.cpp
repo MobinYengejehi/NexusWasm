@@ -9,6 +9,8 @@
 #include "wasmtime/WasmtimeState.hpp"
 #include "wasmtime/WasmtimeError.hpp"
 
+#include "module/ModuleMetadata.hpp"
+
 namespace nexus
 {
     Runtime::Runtime(std::shared_ptr<detail::EngineState> state) noexcept:
@@ -87,7 +89,10 @@ namespace nexus
             };
         }
 
-        auto moduleState = std::make_shared<detail::ModuleState>(m_pState, rawModule);
+        detail::ModulePtr module{ rawModule };
+
+        auto metadata = detail::InspectModule(module.get());
+        auto moduleState = std::make_shared<detail::ModuleState>(m_pState, module.release(), std::move(metadata));
 
         return Module{ std::move(moduleState) };
     }

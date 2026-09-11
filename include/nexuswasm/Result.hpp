@@ -81,6 +81,57 @@ namespace nexus
     private:
         std::variant<T, Error> m_vStorage;
     };
+
+    template<>
+    class [[nodiscard]] Result<void> final
+    {
+    public:
+        Result() noexcept:
+            m_vStorage{ std::monostate{} }
+        {}
+
+        Result(const Error& error):
+            m_vStorage{ error }
+        {}
+
+        Result(Error&& error):
+            m_vStorage{ error }
+        {}
+
+        [[nodiscard]]
+        bool HasValue() const noexcept
+        {
+            return std::holds_alternative<std::monostate>(m_vStorage);
+        }
+
+        [[nodiscard]]
+        explicit operator bool() const noexcept
+        {
+            return HasValue();
+        }
+
+        void Value() const
+        {
+            assert(HasValue());
+        }
+
+        [[nodiscard]]
+        Error& GetError() &
+        {
+            assert(!HasValue());
+            return *std::get_if<Error>(&m_vStorage);
+        }
+
+        [[nodiscard]]
+        const Error& GetError() const &
+        {
+            assert(!HasValue());
+            return *std::get_if<Error>(&m_vStorage);
+        }
+
+    private:
+        std::variant<std::monostate, Error> m_vStorage;
+    };
 }
 
 #endif

@@ -107,3 +107,70 @@ add_test(
     COMMAND
         nexuswasm_runtime_architecture_tests
 )
+
+# ------------------------------------------------------------
+# Module graph tests
+# ------------------------------------------------------------
+
+add_executable(
+    nexuswasm_module_graph_tests
+
+    ModuleGraphTests.cpp
+    TestWat.cpp
+)
+
+target_include_directories(
+    nexuswasm_module_graph_tests
+
+    PRIVATE
+
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+target_compile_definitions(
+    nexuswasm_module_graph_tests
+    PRIVATE
+    NEXUSWASM_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures/module_graph"
+)
+
+target_link_libraries(
+    nexuswasm_module_graph_tests
+
+    PRIVATE
+
+    NexusWasm::NexusWasm
+
+    # Used only by TestWat.cpp for wasmtime_wat2wasm().
+    NexusWasm::Wasmtime
+)
+
+target_compile_features(
+    nexuswasm_module_graph_tests
+
+    PRIVATE
+
+    cxx_std_17
+)
+
+set_target_properties(
+    nexuswasm_module_graph_tests
+
+    PROPERTIES
+
+    CXX_EXTENSIONS OFF
+
+    RUNTIME_OUTPUT_DIRECTORY
+        "${CMAKE_BINARY_DIR}/bin"
+)
+
+nexuswasm_enable_warnings(
+    nexuswasm_module_graph_tests
+)
+
+add_test(
+    NAME
+        nexuswasm.module_graph
+
+    COMMAND
+        nexuswasm_module_graph_tests
+)

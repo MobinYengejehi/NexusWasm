@@ -4,15 +4,20 @@
 #define NEXUSWASM_PROGRAM_HEADER
 
 #include <memory>
+#include <string_view>
 
 #include <nexuswasm/ExecutionDomain.hpp>
 #include <nexuswasm/Export.hpp>
+#include <nexuswasm/Instance.hpp>
+#include <nexuswasm/Module.hpp>
+#include <nexuswasm/Result.hpp>
 
 namespace nexus
 {
     namespace detail
     {
         struct RealmState;
+        class  ModuleGraph;
     }
 
     class Realm;
@@ -34,15 +39,29 @@ namespace nexus
         [[nodiscard]]
         const ExecutionDomain& MainDomain() const noexcept;
 
+        [[nodiscard]]
+        Result<void> AddModule(
+            std::string_view moduleNamespace,
+            const Module&    module
+        );
+
+        [[nodiscard]]
+        Result<void> Instantiate();
+
+        [[nodiscard]]
+        Result<Instance> GetInstance(std::string_view moduleNamespace) const;
+
     private:
         std::shared_ptr<detail::RealmState> m_pRealm;
 
         ExecutionDomain m_cMainDomain;
 
+        std::unique_ptr<detail::ModuleGraph> m_pModuleGraph;
+
         Program(
             std::shared_ptr<detail::RealmState> realmState,
             ExecutionDomain                     mainDomain
-        ) noexcept;
+        );
 
         friend class Realm;
     };

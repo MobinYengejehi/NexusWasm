@@ -3,6 +3,8 @@
 #ifndef NEXUSWASM_WASMTIME_STATE_HEADER
 #define NEXUSWASM_WASMTIME_STATE_HEADER
 
+#include "module/ModuleMetadata.hpp"
+
 #include <memory>
 
 #include <wasmtime.h>
@@ -80,14 +82,17 @@ namespace nexus::detail
     {
         std::shared_ptr<EngineState> engine;
 
-        ModulePtr module;
+        ModulePtr      module;
+        ModuleMetadata metadata;
 
         ModuleState(
             std::shared_ptr<EngineState> engineState,
-            wasmtime_module_t*           rawModule
+            wasmtime_module_t*           rawModule,
+            ModuleMetadata               moduleMetadata
         ):
             engine{ std::move(engineState) },
-            module{ rawModule }
+            module{ rawModule },
+            metadata{ std::move(moduleMetadata) }
         {}
     };
 

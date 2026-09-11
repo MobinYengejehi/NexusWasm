@@ -18,6 +18,7 @@ namespace nexus
     namespace detail
     {
         struct InstanceState;
+        class  ModuleGraph;
 
         enum class ScalerKind: std::uint8_t
         {
@@ -186,6 +187,7 @@ namespace nexus
         std::unique_ptr<detail::InstanceState> m_pState;
 
         friend class ExecutionDomain;
+        friend class detail::ModuleGraph;
     };
 }
 

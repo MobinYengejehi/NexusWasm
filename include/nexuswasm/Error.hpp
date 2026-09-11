@@ -27,7 +27,29 @@ namespace nexus
         SignatureMismatch,
 
         Trap,
-        CallFailed
+        CallFailed,
+
+        InvalidModuleNamespace,
+        DuplicateModuleNamespace,
+
+        ModuleGraphEmpty,
+        ModuleGraphAlreadyInstantiated,
+        ModuleGraphNotInstantiated,
+        ModuleGraphFailed,
+
+        UnresolvedImport,
+
+        UnsupportedDirectImportKind,
+
+        MissingDependencyExport,
+        ImportKindMismatch,
+        ImportSignatureMismatch,
+
+        CyclicModuleDependency,
+
+        LinkerDefinitionFailed,
+
+        ModuleInstanceNotFound
     };
 
     class Error final

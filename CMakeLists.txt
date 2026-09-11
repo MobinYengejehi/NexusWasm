@@ -83,6 +83,9 @@ add_library(
     src/Program.cpp
     src/ExecutionDomain.cpp
 
+    src/module/ModuleMetadata.cpp
+    src/module/ModuleGraph.cpp
+
     src/wasmtime/WasmtimeError.cpp
 )
 

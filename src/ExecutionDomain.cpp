@@ -45,6 +45,8 @@ namespace nexus
             };
         }
 
+        wasmtime_linker_allow_shadowing(linker.get(), false);
+
         auto state = std::make_shared<detail::ExecutionDomainState>(std::move(engine), store.release(), linker.release());
 
         return ExecutionDomain{ std::move(state) };

@@ -12,6 +12,7 @@ namespace nexus
     namespace detail
     {
         struct ModuleState;
+        class  ModuleGraph;
     }
 
     class Runtime;
@@ -35,6 +36,7 @@ namespace nexus
 
         friend class Runtime;
         friend class ExecutionDomain;
+        friend class detail::ModuleGraph;
     };
 }
 
