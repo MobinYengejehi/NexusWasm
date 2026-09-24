@@ -20,13 +20,22 @@ set_property(
         BUNDLED
 )
 
-set(_nexuswasm_default_wasmtime_root "")
+# ------------------------------------------------------------
+# Default Wasmtime root
+# ------------------------------------------------------------
+
+set(
+    _nexuswasm_default_wasmtime_root
+    ""
+)
 
 if(DEFINED ENV{WASMTIME_C_API_ROOT})
+
     set(
         _nexuswasm_default_wasmtime_root
         "$ENV{WASMTIME_C_API_ROOT}"
     )
+
 endif()
 
 set(
@@ -36,11 +45,25 @@ set(
     "Root directory of the Wasmtime C API package"
 )
 
+# ------------------------------------------------------------
+# Configure Wasmtime
+# ------------------------------------------------------------
+
 function(nexuswasm_configure_wasmtime)
 
+    # --------------------------------------------------------
+    # Already configured
+    # --------------------------------------------------------
+
     if(TARGET NexusWasm::Wasmtime)
+
         return()
+
     endif()
+
+    # --------------------------------------------------------
+    # Normalize provider name
+    # --------------------------------------------------------
 
     string(
         TOUPPER
@@ -48,16 +71,31 @@ function(nexuswasm_configure_wasmtime)
         _provider
     )
 
+    # ========================================================
+    # PREBUILT provider
+    # ========================================================
+
     if(_provider STREQUAL "PREBUILT")
 
+        # ----------------------------------------------------
+        # Root directory
+        # ----------------------------------------------------
+
         if(NOT NEXUSWASM_WASMTIME_ROOT)
+
             message(
                 FATAL_ERROR
+
                 "NEXUSWASM_WASMTIME_PROVIDER=PREBUILT requires "
                 "NEXUSWASM_WASMTIME_ROOT or the WASMTIME_C_API_ROOT "
                 "environment variable."
             )
+
         endif()
+
+        # ----------------------------------------------------
+        # Include directory
+        # ----------------------------------------------------
 
         set(
             _include_dir
@@ -65,51 +103,158 @@ function(nexuswasm_configure_wasmtime)
         )
 
         if(NOT EXISTS "${_include_dir}/wasmtime.h")
+
             message(
                 FATAL_ERROR
+
                 "Wasmtime header not found: "
                 "${_include_dir}/wasmtime.h"
             )
+
         endif()
 
-        # --------------------------------------------------------
+        # ====================================================
         # Validate exact Wasmtime version
-        # --------------------------------------------------------
+        # ====================================================
 
         file(
             STRINGS
+
             "${_include_dir}/wasmtime.h"
+
             _version_line
-            REGEX "^#define[ \t]+WASMTIME_VERSION[ \t]+\"[^\"]+\""
+
+            REGEX
+                "^#define[ \t]+WASMTIME_VERSION[ \t]+\"[^\"]+\""
         )
 
         if(NOT _version_line)
+
             message(
                 FATAL_ERROR
-                "Could not determine Wasmtime version from wasmtime.h"
+
+                "Could not determine Wasmtime version from: "
+                "${_include_dir}/wasmtime.h"
             )
+
         endif()
 
         string(
             REGEX REPLACE
+
             "^#define[ \t]+WASMTIME_VERSION[ \t]+\"([^\"]+)\".*$"
+
             "\\1"
+
             _detected_version
+
             "${_version_line}"
         )
 
-        if(NOT _detected_version STREQUAL NEXUSWASM_WASMTIME_VERSION)
+        if(
+            NOT
+            _detected_version
+            STREQUAL
+            NEXUSWASM_WASMTIME_VERSION
+        )
+
             message(
                 FATAL_ERROR
+
                 "Wasmtime version mismatch. "
                 "Expected ${NEXUSWASM_WASMTIME_VERSION}, "
                 "found ${_detected_version}."
             )
+
         endif()
 
-        # --------------------------------------------------------
-        # Static Wasmtime
-        # --------------------------------------------------------
+        # ====================================================
+        # Validate native Wasmtime async support
+        # ====================================================
+
+        #
+        # Wasmtime C API generates:
+        #
+        #   include/wasmtime/conf.h
+        #
+        # according to the features with which the C API itself
+        # was built.
+        #
+        # We do NOT emulate missing async support.
+        #
+
+        set(
+            _wasmtime_conf_header
+            "${_include_dir}/wasmtime/conf.h"
+        )
+
+        if(NOT EXISTS "${_wasmtime_conf_header}")
+
+            message(
+                FATAL_ERROR
+
+                "Wasmtime configuration header not found: "
+                "${_wasmtime_conf_header}"
+            )
+
+        endif()
+
+        # ----------------------------------------------------
+        # async.h must exist
+        # ----------------------------------------------------
+
+        set(
+            _wasmtime_async_header
+            "${_include_dir}/wasmtime/async.h"
+        )
+
+        if(NOT EXISTS "${_wasmtime_async_header}")
+
+            message(
+                FATAL_ERROR
+
+                "Wasmtime ${_detected_version} does not expose "
+                "the native C async header required by NexusWasm: "
+                "${_wasmtime_async_header}"
+            )
+
+        endif()
+
+        # ----------------------------------------------------
+        # Check WASMTIME_FEATURE_ASYNC
+        # ----------------------------------------------------
+
+        file(
+            STRINGS
+
+            "${_wasmtime_conf_header}"
+
+            _wasmtime_async_feature_line
+
+            REGEX
+                "^[ \t]*#define[ \t]+WASMTIME_FEATURE_ASYNC([ \t]+.*)?$"
+        )
+
+        if(NOT _wasmtime_async_feature_line)
+
+            message(
+                FATAL_ERROR
+
+                "The selected Wasmtime ${_detected_version} C API "
+                "package was built without WASMTIME_FEATURE_ASYNC. "
+
+                "NexusWasm Phase 07 requires Wasmtime native async "
+                "execution support. "
+
+                "No std::async, worker-thread, or other emulation "
+                "will be used."
+            )
+
+        endif()
+
+        # ====================================================
+        # Locate static Wasmtime library
+        # ====================================================
 
         if(WIN32)
 
@@ -135,12 +280,19 @@ function(nexuswasm_configure_wasmtime)
         endif()
 
         if(NOT EXISTS "${_wasmtime_library}")
+
             message(
                 FATAL_ERROR
+
                 "Wasmtime static library not found: "
                 "${_wasmtime_library}"
             )
+
         endif()
+
+        # ====================================================
+        # Imported Wasmtime target
+        # ====================================================
 
         add_library(
             NexusWasmWasmtime
@@ -151,6 +303,7 @@ function(nexuswasm_configure_wasmtime)
 
         set_target_properties(
             NexusWasmWasmtime
+
             PROPERTIES
 
             IMPORTED_LOCATION
@@ -160,7 +313,16 @@ function(nexuswasm_configure_wasmtime)
                 "${_include_dir}"
         )
 
+        # ====================================================
+        # Platform-specific configuration
+        # ====================================================
+
         if(WIN32)
+
+            #
+            # Wasmtime's prebuilt static C API on Windows
+            # must not import WASM/WASI symbols from a DLL.
+            #
 
             target_compile_definitions(
                 NexusWasmWasmtime
@@ -170,6 +332,11 @@ function(nexuswasm_configure_wasmtime)
                 "WASM_API_EXTERN="
                 "WASI_API_EXTERN="
             )
+
+            #
+            # System libraries required by the static
+            # Wasmtime C API on Windows.
+            #
 
             target_link_libraries(
                 NexusWasmWasmtime
@@ -197,7 +364,10 @@ function(nexuswasm_configure_wasmtime)
 
         else()
 
-            find_package(Threads REQUIRED)
+            find_package(
+                Threads
+                REQUIRED
+            )
 
             target_link_libraries(
                 NexusWasmWasmtime
@@ -211,41 +381,64 @@ function(nexuswasm_configure_wasmtime)
 
         endif()
 
+        # ====================================================
+        # Public alias used internally by NexusWasm
+        # ====================================================
+
         add_library(
             NexusWasm::Wasmtime
             ALIAS
             NexusWasmWasmtime
         )
 
+        # ====================================================
+        # Configuration summary
+        # ====================================================
+
         message(
             STATUS
+
             "NexusWasm Wasmtime: "
             "provider=PREBUILT "
             "version=${_detected_version} "
             "linkage=STATIC "
+            "async=NATIVE "
             "root=${NEXUSWASM_WASMTIME_ROOT}"
         )
+
+    # ========================================================
+    # SYSTEM provider
+    # ========================================================
 
     elseif(_provider STREQUAL "SYSTEM")
 
         message(
             FATAL_ERROR
-            "SYSTEM Wasmtime provider is reserved but not implemented "
-            "in milestone 03."
+
+            "SYSTEM Wasmtime provider is reserved but not implemented."
         )
+
+    # ========================================================
+    # BUNDLED provider
+    # ========================================================
 
     elseif(_provider STREQUAL "BUNDLED")
 
         message(
             FATAL_ERROR
-            "BUNDLED Wasmtime provider is reserved but not implemented "
-            "in milestone 03."
+
+            "BUNDLED Wasmtime provider is reserved but not implemented."
         )
+
+    # ========================================================
+    # Unknown provider
+    # ========================================================
 
     else()
 
         message(
             FATAL_ERROR
+
             "Unknown Wasmtime provider: "
             "${NEXUSWASM_WASMTIME_PROVIDER}"
         )

@@ -3,6 +3,8 @@
 #include <memory>
 #include <utility>
 
+#include "execution/StoreExecutionState.hpp"
+
 #include "wasmtime/WasmtimeError.hpp"
 #include "wasmtime/WasmtimeState.hpp"
 
@@ -66,7 +68,7 @@ namespace nexus
         {
             return Error{
                 ErrorCode::InvalidState,
-                "Module is in moved-from state."
+                "Module is in a moved-from state."
             };
         }
 
@@ -74,7 +76,28 @@ namespace nexus
         {
             return Error{
                 ErrorCode::RuntimeMismatch,
-                "Module blongs to another runtime."
+                "Module belongs to another Runtime."
+            };
+        }
+
+        auto leaseResult = m_pState->executionState.Acquire(
+            detail::StoreExecutionOperation::SynchronousExecution,
+            "module instantiation"
+        );
+        if (!leaseResult)
+        {
+            return leaseResult.GetError();
+        }
+
+        auto executionLease = std::move(leaseResult).Value();
+
+        if (m_pState->UsesAsyncHostFunction(module.m_pState->metadata))
+        {
+            return Error{
+                ErrorCode::StoreRequiresAsync,
+                "Module imports a Wasmtime-native "
+                "asynchronous host function and must "
+                "be instantiated with InstantiateAsync()."
             };
         }
 

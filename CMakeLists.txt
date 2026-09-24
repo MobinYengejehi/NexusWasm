@@ -76,12 +76,16 @@ add_library(
     NexusWasm
 
     src/Version.cpp
+
     src/Runtime.cpp
     src/Module.cpp
     src/Instance.cpp
     src/Realm.cpp
     src/Program.cpp
     src/ExecutionDomain.cpp
+
+    src/AsyncInstantiation.cpp
+    src/AsyncHostFunction.cpp
 
     src/module/ModuleMetadata.cpp
     src/module/ModuleGraph.cpp
@@ -186,12 +190,18 @@ target_sources(
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Error.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Result.hpp"
 
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/AsyncCall.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/AsyncInstantiation.hpp"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/AsyncHostFunction.hpp"
+
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Runtime.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Realm.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Program.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/ExecutionDomain.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Module.hpp"
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Instance.hpp"
+
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/detail/Scaler.hpp"
 
         "${CMAKE_CURRENT_SOURCE_DIR}/include/nexuswasm/Version.hpp"
 

@@ -95,7 +95,7 @@ namespace nexus
         {}
 
         Result(Error&& error):
-            m_vStorage{ error }
+            m_vStorage{ std::move(error) }
         {}
 
         [[nodiscard]]

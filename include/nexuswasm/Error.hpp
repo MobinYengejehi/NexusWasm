@@ -49,7 +49,15 @@ namespace nexus
 
         LinkerDefinitionFailed,
 
-        ModuleInstanceNotFound
+        ModuleInstanceNotFound,
+
+        StoreBusy,
+        StoreRequiresAsync,
+
+        AsyncOperationNotReady,
+        AsyncResultAlreadyTaken,
+
+        AsyncHostFunctionDefinitionFailed
     };
 
     class Error final

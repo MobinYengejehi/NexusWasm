@@ -70,7 +70,10 @@ namespace nexus::detail
         std::unordered_map<std::string, std::size_t> m_mIndex;
 
         [[nodiscard]]
-        Result<void> BuildDependencies();
+        Result<void> BuildDependencies(
+            const std::shared_ptr<ExecutionDomainState>& domain,
+            bool&                                        requireAsyncHost
+        );
 
         [[nodiscard]]
         Result<std::vector<std::size_t>> BuildInstantiationOrder() const;

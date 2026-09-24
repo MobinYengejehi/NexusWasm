@@ -4,7 +4,11 @@
 #define NEXUSWASM_EXECUTION_DOMAIN_HEADER
 
 #include <memory>
+#include <string_view>
+#include <utility>
 
+#include <nexuswasm/AsyncHostFunction.hpp>
+#include <nexuswasm/AsyncInstantiation.hpp>
 #include <nexuswasm/Export.hpp>
 #include <nexuswasm/Instance.hpp>
 #include <nexuswasm/Module.hpp>
@@ -34,6 +38,17 @@ namespace nexus
 
         [[nodiscard]]
         Result<Instance> Instantiate(const Module& module);
+
+        [[nodiscard]]
+        Result<AsyncInstantiation> InstantiateAsync(const Module& module);
+
+        [[nodiscard]]
+        Result<void> DefineAsyncFunction(
+            std::string_view                  module,
+            std::string_view                  name,
+            const AsyncHostFunctionSignature& signature,
+            AsyncHostFunction                 function
+        );
 
     private:
         std::shared_ptr<detail::ExecutionDomainState> m_pState;

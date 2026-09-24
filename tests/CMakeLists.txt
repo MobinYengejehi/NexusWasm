@@ -174,3 +174,72 @@ add_test(
     COMMAND
         nexuswasm_module_graph_tests
 )
+
+# ------------------------------------------------------------
+# Native async tests
+# ------------------------------------------------------------
+
+add_executable(
+    nexuswasm_async_tests
+
+    AsyncTests.cpp
+    TestWat.cpp
+)
+
+target_include_directories(
+    nexuswasm_async_tests
+
+    PRIVATE
+
+    "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+target_compile_definitions(
+    nexuswasm_async_tests
+
+    PRIVATE
+
+    NEXUSWASM_TEST_FIXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/fixtures/async"
+)
+
+target_link_libraries(
+    nexuswasm_async_tests
+
+    PRIVATE
+
+    NexusWasm::NexusWasm
+
+    # TestWat.cpp uses wasmtime_wat2wasm().
+    NexusWasm::Wasmtime
+)
+
+target_compile_features(
+    nexuswasm_async_tests
+
+    PRIVATE
+
+    cxx_std_17
+)
+
+set_target_properties(
+    nexuswasm_async_tests
+
+    PROPERTIES
+
+    CXX_EXTENSIONS OFF
+
+    RUNTIME_OUTPUT_DIRECTORY
+        "${CMAKE_BINARY_DIR}/bin"
+)
+
+nexuswasm_enable_warnings(
+    nexuswasm_async_tests
+)
+
+add_test(
+    NAME
+        nexuswasm.native_async
+
+    COMMAND
+        nexuswasm_async_tests
+)

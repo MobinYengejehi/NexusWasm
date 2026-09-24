@@ -132,8 +132,13 @@ namespace nexus::detail
         return nullptr;
     }
 
-    Result<void> ModuleGraph::BuildDependencies()
+    Result<void> ModuleGraph::BuildDependencies(
+        const std::shared_ptr<ExecutionDomainState>& domain,
+        bool&                                        requiresAsyncHost
+    )
     {
+        requiresAsyncHost = false;
+
         for (auto& node : m_vNodes)
         {
             node.dependencies.clear();
@@ -144,6 +149,29 @@ namespace nexus::detail
                 const auto providerIt = m_mIndex.find(import.module);
                 if (providerIt == m_mIndex.end())
                 {
+                    if (domain->HasAsyncHostFunction(import.module, import.name))
+                    {
+                        if (import.kind != WASM_EXTERN_FUNC)
+                        {
+                            return Error{
+                                ErrorCode::ImportKindMismatch,
+                                "Module '" +
+                                node.moduleNamespace +
+                                "' resolves '" +
+                                import.module +
+                                "." +
+                                import.name +
+                                "' to an async host function, "
+                                "but the WebAssembly import is "
+                                "not a function."
+                            };
+                        }
+
+                        requiresAsyncHost = true;
+
+                        continue;
+                    }
+
                     return Error{
                         ErrorCode::UnresolvedImport,
                         (
@@ -384,10 +412,34 @@ namespace nexus::detail
             };
         }
 
-        auto dependenciesResult = BuildDependencies();
+        auto leaseResult = domain->executionState.Acquire(
+            StoreExecutionOperation::SynchronousExecution,
+            "Program module graph instantiation"
+        );
+        if (!leaseResult)
+        {
+            return leaseResult.GetError();
+        }
+
+        auto executionLease = std::move(leaseResult).Value();
+
+        bool requiresAsyncHost = false;
+        auto dependenciesResult = BuildDependencies(domain, requiresAsyncHost);
         if (!dependenciesResult)
         {
             return dependenciesResult.GetError();
+        }
+
+        if (requiresAsyncHost)
+        {
+            return Error{
+                ErrorCode::StoreRequiresAsync,
+                "Program module graph contains a "
+                "Wasmtime-native async host import. "
+                "Phase 07 keeps Program::Instantiate() "
+                "synchronous; use native async instantiation "
+                "through ExecutionDomain for this module."
+            };
         }
 
         auto orderResult = BuildInstantiationOrder();

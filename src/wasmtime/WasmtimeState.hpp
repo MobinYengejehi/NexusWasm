@@ -3,9 +3,14 @@
 #ifndef NEXUSWASM_WASMTIME_STATE_HEADER
 #define NEXUSWASM_WASMTIME_STATE_HEADER
 
+#include "execution/StoreExecutionState.hpp"
 #include "module/ModuleMetadata.hpp"
 
 #include <memory>
+#include <string>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
 
 #include <wasmtime.h>
 
@@ -55,10 +60,22 @@ namespace nexus::detail
         }
     };
 
+    struct CallFutureDeleter final
+    {
+        void operator()(wasmtime_call_future_t* future) const noexcept
+        {
+            if (future != nullptr)
+            {
+                wasmtime_call_future_delete(future);
+            }
+        }
+    };
+
     using EnginePtr = std::unique_ptr<wasm_engine_t, EngineDeleter>;
     using ModulePtr = std::unique_ptr<wasmtime_module_t, ModuleDeleter>;
     using StorePtr = std::unique_ptr<wasmtime_store_t, StoreDeleter>;
     using LinkerPtr = std::unique_ptr<wasmtime_linker_t, LinkerDeleter>;
+    using CallFuturePtr = std::unique_ptr<wasmtime_call_future_t, CallFutureDeleter>;
 
     struct EngineState final
     {
@@ -100,8 +117,12 @@ namespace nexus::detail
     {
         std::shared_ptr<EngineState> engine;
 
+        StoreExecutionState executionState;
+
         StorePtr  store;
         LinkerPtr linker;
+
+        std::unordered_set<std::string> asyncHostFunctions;
 
         ExecutionDomainState(
             std::shared_ptr<EngineState> engineState,
@@ -112,6 +133,59 @@ namespace nexus::detail
             store{ rawStore },
             linker{ rawLinker }
         {}
+
+        void RegisterAsyncHostFunction(
+            const std::string_view module,
+            const std::string_view name
+        )
+        {
+            asyncHostFunctions.emplace(MakeHostFunctionKey(module, name));
+        }
+
+        [[nodiscard]]
+        bool HasAsyncHostFunction(
+            const std::string_view module,
+            const std::string_view name
+        ) const
+        {
+            return asyncHostFunctions.find(MakeHostFunctionKey(module, name)) != asyncHostFunctions.end();
+        }
+
+        [[nodiscard]]
+        bool UsesAsyncHostFunction(const ModuleMetadata& metadata)
+        {
+            for (const auto& import : metadata.imports)
+            {
+                if (import.kind != WASM_EXTERN_FUNC)
+                {
+                    continue;
+                }
+
+                if (HasAsyncHostFunction(import.module, import.name))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+    private:
+        [[nodiscard]]
+        static std::string MakeHostFunctionKey(
+            const std::string_view module,
+            const std::string_view name
+        )
+        {
+            std::string key;
+            key.reserve(module.size() + 1 + name.size());
+
+            key.append(module.data(), module.size());
+            key.push_back('\0');
+            key.append(name.data(), name.size());
+
+            return key;
+        }
     };
 
     struct InstanceState final
