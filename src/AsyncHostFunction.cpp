@@ -232,7 +232,7 @@ namespace nexus
             ):
                 operation{ std::move(asyncOperation) },
                 resultKinds{ std::move(kinds) },
-                results{ results },
+                results{ resultStorage },
                 resultCount{ count },
                 trapRet{ trapOutput }
             {}

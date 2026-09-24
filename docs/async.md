@@ -142,15 +142,27 @@ of Phase 07.
 
 ## Thread safety
 
-Native async does not make a Wasmtime Store concurrently usable.
+Wasmtime native async does not make a Store concurrently usable.
 
-NexusWasm serializes Store-owning operations through
-StoreExecutionState.
+NexusWasm currently defines an ExecutionDomain as having one logical
+execution owner at a time.
 
-A Store must not be concurrently manipulated by multiple host
-threads while an asynchronous future is active.
+StoreExecutionState is a lifecycle/state machine, not a cross-thread
+synchronization primitive. It intentionally contains no mutex.
 
-Different ExecutionDomains/Stores remain independent.
+A Store may be handed from one OS thread to another, provided that the
+host guarantees that the previous owner has completely stopped using the
+ExecutionDomain and establishes the required synchronization/happens-before
+relationship.
+
+Concurrent access to the same ExecutionDomain / Store is unsupported,
+even when different Instances inside that Store are being used.
+
+While a wasmtime_call_future_t is alive, no other Store operation may
+begin, even from the same OS thread.
+
+Parallel WebAssembly execution should use separate ExecutionDomains /
+Stores. Compiled Modules may be reused across those Stores.
 
 ## Not implemented in Phase 07
 

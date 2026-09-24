@@ -373,6 +373,14 @@ namespace nexus
             if (!state->ready)
             {
                 return Error{
+                    ErrorCode::AsyncOperationNotReady,
+                    "Async call result has already been taken."
+                };
+            }
+
+            if (state->resultTaken)
+            {
+                return Error{
                     ErrorCode::AsyncResultAlreadyTaken,
                     "Async call result has already been taken."
                 };
